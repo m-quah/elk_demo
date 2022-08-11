@@ -1,0 +1,36 @@
+filebeat.inputs:
+- type: syslog
+  format: rfc3164
+  protocol.udp:
+    host: "0.0.0.0:5000"
+    max_message_size: 10KiB
+  enabled: true
+
+- type: syslog
+  format: rfc5424
+  protocol.tcp:
+    host: "0.0.0.0:5000"
+    timeout: 300s
+    max_message_size: 20MiB
+  enabled: true
+
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      hints.enabled: true
+
+output.logstash:
+  hosts: [ "logstash:5044" ]
+  worker: 1
+
+
+# --- To Output to Elasticsearch directly ---
+# output.elasticsearch:
+#   hosts: [ "https://es01:9200" ]
+#   index: "filebeat-host-syslog-%{[agent.version]}"
+#   username: "elastic"
+#   password: "topsecret"
+#   ssl.certificate_authorities: "/usr/share/filebeat/config/certs/ca/ca.crt"
+
+# setup.template.name: "filebeat-host-syslog"
+# setup.template.pattern: "filebeat-host-syslog-%{[agent.version]}"

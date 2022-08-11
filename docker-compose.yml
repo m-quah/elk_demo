@@ -116,6 +116,7 @@ services:
       - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
       - XPACK_SECURITY_ENCRYPTIONKEY=${KIBANA_ENCRYPTION_KEY}
       - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${KIBANA_ENCRYPTION_KEY}
+      - XPACK_ACTIONS_PRECONFIGUREDALERTHISTORYESINDEX=true
     mem_limit: ${MEM_LIMIT}
     healthcheck:
       test:
@@ -138,8 +139,41 @@ services:
     volumes:
       - certs:/usr/share/logstash/config/certs
     ports:
-      - ${LOGSTASH_PORT}:5000
+      - 5044:5044
     restart: always
+
+  filebeat_es:
+    depends_on:
+      - logstash
+    build:
+      context: .
+      dockerfile: ./dockerfiles/filebeat_es.dockerfile
+    user: "0"
+    volumes:
+      - certs:/usr/share/filebeat/config/certs
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: [ "-strict.perms=false" ]
+    deploy:
+      mode: global
+
+  filebeat_logstash:
+    depends_on:
+      - logstash
+    build:
+      context: .
+      dockerfile: ./dockerfiles/filebeat_logstash.dockerfile
+    user: "0"
+    volumes:
+      - certs:/usr/share/filebeat/config/certs
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - ${FILEBEAT_HOST_PORT}:5000
+    command: [ "-strict.perms=false" ]
+    deploy:
+      mode: global
+
 
 volumes:
   certs:
